@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>원소 플래시카드 | 화학 I</title>
+<style>
+:root {
+  --bg: #071225; --panel: #101f39; --text: #edf4ff; --muted: #a8bad7;
+  --accent: #6aa8ff; --accent2: #a58bff; --border: rgba(180,205,255,.18);
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; min-height: 100vh; color: var(--text);
+  font-family: system-ui, -apple-system, "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
+  background: radial-gradient(ellipse at top, #173568 0, var(--bg) 55%);
+}
+button { font: inherit; cursor: pointer; touch-action: manipulation; }
+button:focus-visible { outline: 3px solid #ffd166; outline-offset: 3px; }
+.app { width: min(920px, 100%); margin: auto; padding: 24px 18px 40px; }
+header { display: flex; justify-content: space-between; align-items: center; gap: 14px; margin-bottom: 20px; }
+.eyebrow { color: #91caff; font-size: .85rem; letter-spacing: .08em; }
+h1 { margin: 4px 0; font-size: clamp(1.5rem, 5vw, 2.2rem); }
+.sub { color: var(--muted); margin: 0; font-size: .92rem; }
+.counter { min-width: 88px; text-align: center; padding: 12px; border: 1px solid var(--border); border-radius: 16px; background: #0b1930; }
+.counter strong { font-size: 1.15rem; }
+.progress { height: 6px; background: #243652; border-radius: 9px; overflow: hidden; margin: 18px 0; }
+.progress span { display: block; height: 100%; width: 5%; background: linear-gradient(90deg,var(--accent),var(--accent2)); transition: width .25s; }
+.mode-tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+.mode-tabs button, .controls button, .primary {
+  border: 1px solid var(--border); border-radius: 12px; padding: 11px 14px;
+  color: var(--text); background: #142642; transition: transform .15s, background .2s, border-color .2s;
+}
+.mode-tabs button { flex: 1; }
+button:hover { border-color: #78adff; }
+button:active { transform: scale(.98); }
+.mode-tabs .active, .primary { background: linear-gradient(120deg,#377fe8,#7764e8); border-color: transparent; }
+.card-scene { perspective: 1200px; width: 100%; max-width: 540px; margin: 0 auto 18px; }
+.flashcard { position: relative; min-height: 365px; transform-style: preserve-3d; transition: transform .6s cubic-bezier(.2,.75,.25,1); cursor: pointer; }
+.flashcard.flipped { transform: rotateY(180deg); }
+.face {
+  position: absolute; inset: 0; min-height: 365px; backface-visibility: hidden;
+  -webkit-backface-visibility: hidden; border-radius: 26px; padding: 24px;
+  color: #102143; border: 1px solid rgba(255,255,255,.7);
+  background: radial-gradient(circle at 90% 12%,#d0e7ff 0 36px,transparent 37px), linear-gradient(145deg,#fff,#dcecff);
+  box-shadow: 0 18px 50px rgba(0,0,0,.25), 0 0 0 4px rgba(103,165,255,.12);
+  display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;
+}
+.front .topline { position: absolute; top: 22px; left: 24px; right: 24px; display: flex; justify-content: space-between; color: #536b94; font-size: .9rem; }
+.symbol { font-size: clamp(6rem,20vw,9rem); font-weight: 800; line-height: 1; letter-spacing: -.06em; }
+.card-hint { margin-top: 22px; color: #56709a; font-size: .9rem; }
+.back { transform: rotateY(180deg); background: linear-gradient(145deg,#f7fbff,#d9edff); align-items: stretch; text-align: left; }
+.back .element-name { text-align: center; font-size: 2rem; font-weight: 800; margin: 4px 0 0; }
+.back .english { text-align: center; color: #526d97; margin: 0 0 16px; }
+.facts { border-top: 1px solid #c5d8ee; padding-top: 14px; }
+.facts p { margin: 8px 0; line-height: 1.55; }
+.facts strong { color: #254e89; }
+.controls { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; max-width: 650px; margin: 0 auto 26px; }
+.controls button { padding: 12px 8px; }
+.quiz-box { max-width: 540px; margin: 0 auto 18px; padding: 24px; border: 1px solid var(--border); border-radius: 22px; background: rgba(15,31,56,.94); }
+.quiz-box h2 { margin: 10px 0 4px; font-size: 1.7rem; }
+.quiz-meta { display: flex; justify-content: space-between; color: var(--muted); font-size: .9rem; }
+.choices { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; }
+.choice { border: 1px solid var(--border); border-radius: 14px; padding: 16px 10px; color: var(--text); background: #142642; font-size: 1.2rem; }
+.choice.correct { background: #123f35; border-color: #4ade80; }
+.choice.wrong { background: #49232c; border-color: #fb7185; }
+.feedback { min-height: 28px; margin-top: 16px; color: #c8d8f1; line-height: 1.5; }
+.next-question { width: 100%; margin-top: 10px; }
+.element-section { padding: 20px; border: 1px solid var(--border); border-radius: 20px; background: rgba(13,28,51,.7); }
+.section-title { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-bottom: 14px; }
+.section-title h2 { margin: 0; font-size: 1.15rem; }
+.section-title span { color: var(--muted); font-size: .85rem; }
+.element-grid { display: grid; grid-template-columns: repeat(5,minmax(0,1fr)); gap: 9px; }
+.element-tile { min-width: 0; border: 1px solid var(--border); border-radius: 12px; background: #12233e; color: var(--text); padding: 10px 3px; }
+.element-tile.selected { border-color: #75aaff; background: #1b3965; box-shadow: inset 0 0 0 1px #75aaff; }
+.element-tile small { display: block; color: var(--muted); font-size: .72rem; }
+.element-tile b { display: block; font-size: 1.25rem; margin: 2px 0; }
+.element-tile span { display: block; overflow-wrap: anywhere; font-size: .75rem; }
+.note { color: var(--muted); font-size: .82rem; line-height: 1.5; margin-top: 18px; }
+.hidden { display: none !important; }
+@media (max-width: 560px) {
+  .app { padding: 18px 12px 28px; }
+  header { align-items: flex-start; }
+  .counter { min-width: 72px; padding: 10px 7px; }
+  .flashcard, .face { min-height: 330px; }
+  .face { padding: 20px; }
+  .controls { grid-template-columns: repeat(2,1fr); }
+  .element-section { padding: 14px; }
+  .element-grid { gap: 6px; }
+  .element-tile { padding: 8px 2px; }
+  .element-tile span { font-size: .68rem; }
+  .choices { gap: 8px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; }
+}
+</style>
+</head>
+<body>
+<main class="app">
+  <header>
+    <div>
+      <div class="eyebrow">고등학교 화학 I</div>
+      <h1>원소 플래시카드</h1>
+      <p class="sub">1번부터 20번까지, 카드를 넘기며 익혀 보세요.</p>
+    </div>
+    <div class="counter"><strong id="counter">1 / 20</strong><br><small>학습 진행</small></div>
+  </header>
+  <div class="progress" aria-label="학습 진행률"><span id="progress"></span></div>
+
+  <div class="mode-tabs" role="tablist" aria-label="학습 모드">
+    <button id="studyTab" class="active" role="tab" aria-selected="true">카드 학습</button>
+    <button id="quizTab" role="tab" aria-selected="false">퀴즈 모드</button>
+  </div>
+
+  <section id="studyPanel">
+    <div class="card-scene">
+      <div class="flashcard" id="flashcard" role="button" tabindex="0" aria-label="카드를 뒤집어 원소 정보를 확인합니다.">
+        <div class="face front">
+          <div class="topline"><span id="frontNumber">원자 번호 1</span><span id="frontType">비금속</span></div>
+          <div class="symbol" id="symbol">H</div>
+          <div class="card-hint">카드를 누르면 뒷면이 나타납니다 ↻</div>
+        </div>
+        <div class="face back">
+          <div id="backNumber" class="eyebrow" style="color:#42689d;text-align:center">1번 원소</div>
+          <div class="element-name" id="elementName">수소</div>
+          <p class="english" id="englishName">Hydrogen</p>
+          <div class="facts">
+            <p><strong>족 / 주기</strong><br><span id="groupPeriod">1주기 · 1족</span></p>
+            <p><strong>분류</strong><br><span id="classification">비금속</span></p>
+            <p><strong>주요 특징</strong><br><span id="feature">가장 가벼운 원소.</span></p>
+          </div>
+          <div class="card-hint">카드를 다시 누르면 앞면으로 돌아갑니다</div>
+        </div>
+      </div>
+    </div>
+    <div class="controls">
+      <button id="prevBtn">← 이전 원소</button>
+      <button id="shuffleBtn">⤨ 랜덤 섞기</button>
+      <button id="nextBtn">다음 원소 →</button>
+      <button id="flipBtn">카드 뒤집기 ↻</button>
+    </div>
+  </section>
+
+  <section id="quizPanel" class="quiz-box hidden">
+    <div class="quiz-meta"><span>기호 맞히기</span><span id="score">점수 0 / 0</span></div>
+    <h2 id="quizPrompt">수소의 원소 기호는?</h2>
+    <p class="sub" id="quizClue">1주기 · 1족</p>
+    <div class="choices" id="choices"></div>
+    <div class="feedback" id="feedback" aria-live="polite">정답이라고 생각하는 기호를 선택하세요.</div>
+    <button id="nextQuestion" class="primary next-question hidden">다음 문제 →</button>
+  </section>
+
+  <section class="element-section">
+    <div class="section-title"><h2>원소 목록</h2><span>원소를 눌러 바로 이동</span></div>
+    <div class="element-grid" id="elementGrid"></div>
+    <p class="note">족 번호는 현대 IUPAC 기준(1~18족)을 사용합니다. 원소의 특징은 고등학교 화학 I 학습을 위해 간략히 정리했습니다.</p>
+  </section>
+</main>
+
+<script>
+const elements = [
+ {n:1,s:"H",ko:"수소",en:"Hydrogen",g:1,p:1,c:"비금속",f:"가장 가벼운 원소다. 가연성 기체이며 별의 핵융합에 중요하다."},
+ {n:2,s:"He",ko:"헬륨",en:"Helium",g:18,p:1,c:"비활성 기체",f:"반응성이 매우 작은 비활성 기체다. 풍선과 극저온 냉각에 사용된다."},
+ {n:3,s:"Li",ko:"리튬",en:"Lithium",g:1,p:2,c:"알칼리 금속",f:"가벼운 알칼리 금속이다. 충전식 배터리에 널리 사용된다."},
+ {n:4,s:"Be",ko:"베릴륨",en:"Beryllium",g:2,p:2,c:"알칼리 토금속",f:"가볍고 단단하다. 분진과 화합물은 독성이 있으므로 주의해야 한다."},
+ {n:5,s:"B",ko:"붕소",en:"Boron",g:13,p:2,c:"준금속",f:"준금속 원소로 붕규산 유리와 내열 소재에 사용된다."},
+ {n:6,s:"C",ko:"탄소",en:"Carbon",g:14,p:2,c:"비금속",f:"유기 화합물의 기본 원소다. 다이아몬드와 흑연의 구성 원소다."},
+ {n:7,s:"N",ko:"질소",en:"Nitrogen",g:15,p:2,c:"비금속",f:"공기의 약 78%를 차지한다. 단백질과 핵산 구성에 필수적이다."},
+ {n:8,s:"O",ko:"산소",en:"Oxygen",g:16,p:2,c:"비금속",f:"호흡과 연소에 관여하는 기체다. 공기의 약 21%를 차지한다."},
+ {n:9,s:"F",ko:"플루오린",en:"Fluorine",g:17,p:2,c:"할로젠",f:"반응성이 매우 큰 할로젠이다. 플루오린 화합물은 치약 등에도 활용된다."},
+ {n:10,s:"Ne",ko:"네온",en:"Neon",g:18,p:2,c:"비활성 기체",f:"반응성이 매우 작은 기체다. 방전관에서 붉은빛을 낸다."},
+ {n:11,s:"Na",ko:"나트륨",en:"Sodium",g:1,p:3,c:"알칼리 금속",f:"물과 격렬하게 반응한다. 나트륨 이온은 체액 균형에 중요하다."},
+ {n:12,s:"Mg",ko:"마그네슘",en:"Magnesium",g:2,p:3,c:"알칼리 토금속",f:"가벼운 금속이다. 연소할 때 밝은 흰색 빛을 낸다."},
+ {n:13,s:"Al",ko:"알루미늄",en:"Aluminium",g:13,p:3,c:"금속",f:"가볍고 부식에 강하다. 표면의 산화막이 내부를 보호한다."},
+ {n:14,s:"Si",ko:"규소",en:"Silicon",g:14,p:3,c:"준금속",f:"대표적인 준금속으로 반도체와 유리 제조에 중요하다."},
+ {n:15,s:"P",ko:"인",en:"Phosphorus",g:15,p:3,c:"비금속",f:"DNA, ATP와 뼈의 구성에 중요한 비금속 원소다."},
+ {n:16,s:"S",ko:"황",en:"Sulfur",g:16,p:3,c:"비금속",f:"노란색 고체 비금속이다. 황산과 여러 생체 분자의 구성 원소다."},
+ {n:17,s:"Cl",ko:"염소",en:"Chlorine",g:17,p:3,c:"할로젠",f:"반응성이 큰 할로젠 기체다. 염화 이온은 소금의 구성 성분이다."},
+ {n:18,s:"Ar",ko:"아르곤",en:"Argon",g:18,p:3,c:"비활성 기체",f:"공기에 포함된 비활성 기체다. 용접 시 보호 기체로 사용된다."},
+ {n:19,s:"K",ko:"칼륨",en:"Potassium",g:1,p:4,c:"알칼리 금속",f:"물과 격렬하게 반응한다. 칼륨 이온은 신경과 근육 기능에 중요하다."},
+ {n:20,s:"Ca",ko:"칼슘",en:"Calcium",g:2,p:4,c:"알칼리 토금속",f:"칼슘 화합물은 뼈와 치아의 주요 무기 성분이다."}
+];
+
+let order = elements.map((_,i)=>i);
+let pos = 0, flipped = false, quizMode = false;
+let quizTarget = null, quizAnswered = false, quizCount = 0, quizCorrect = 0;
+const $ = id => document.getElementById(id);
+const current = () => elements[order[pos]];
+
+function renderCard() {
+  const e = current();
+  $("counter").textContent = `${pos+1} / ${elements.length}`;
+  $("progress").style.width = `${(pos+1)/elements.length*100}%`;
+  $("frontNumber").textContent = `원자 번호 ${e.n}`;
+  $("frontType").textContent = e.c;
+  $("symbol").textContent = e.s;
+  $("backNumber").textContent = `${e.n}번 원소`;
+  $("elementName").textContent = e.ko;
+  $("englishName").textContent = e.en;
+  $("groupPeriod").textContent = `${e.p}주기 · ${e.g}족`;
+  $("classification").textContent = e.c;
+  $("feature").textContent = e.f;
+  $("flashcard").classList.toggle("flipped", flipped);
+  document.querySelectorAll(".element-tile").forEach((tile,i)=>tile.classList.toggle("selected",elements[i].n===e.n));
+}
+function flipCard() { flipped = !flipped; renderCard(); }
+function move(delta) { pos = (pos + delta + order.length) % order.length; flipped = false; renderCard(); }
+function shuffleOrder() {
+  for(let i=order.length-1;i>0;i--) {
+    const j=Math.floor(Math.random()*(i+1));
+    [order[i],order[j]]=[order[j],order[i]];
+  }
+  pos=0; flipped=false; renderCard();
+}
+function renderGrid() {
+  $("elementGrid").innerHTML = elements.map((e,i)=>`
+    <button class="element-tile" data-index="${i}" aria-label="${e.n}번 ${e.ko}">
+      <small>${e.n}</small><b>${e.s}</b><span>${e.ko}</span>
+    </button>`).join("");
+  $("elementGrid").querySelectorAll("button").forEach(btn=>btn.addEventListener("click",()=>{
+    const atomicNumber=Number(btn.dataset.index)+1;
+    const index=order.indexOf(atomicNumber-1);
+    pos=index; flipped=false; renderCard();
+    if(quizMode) newQuestion();
+    window.scrollTo({top:0,behavior:"smooth"});
+  }));
+}
+function setMode(isQuiz) {
+  quizMode=isQuiz;
+  $("studyPanel").classList.toggle("hidden",isQuiz);
+  $("quizPanel").classList.toggle("hidden",!isQuiz);
+  $("studyTab").classList.toggle("active",!isQuiz);
+  $("quizTab").classList.toggle("active",isQuiz);
+  $("studyTab").setAttribute("aria-selected",String(!isQuiz));
+  $("quizTab").setAttribute("aria-selected",String(isQuiz));
+  if(isQuiz) newQuestion();
+}
+function newQuestion() {
+  quizTarget=current(); quizAnswered=false;
+  $("quizPrompt").textContent=`${quizTarget.ko}의 원소 기호는?`;
+  $("quizClue").textContent=`${quizTarget.p}주기 · ${quizTarget.g}족`;
+  $("feedback").textContent="정답이라고 생각하는 기호를 선택하세요.";
+  $("nextQuestion").classList.add("hidden");
+  const wrong=elements.filter(e=>e.n!==quizTarget.n).sort(()=>Math.random()-.5).slice(0,3);
+  const opts=[quizTarget,...wrong].sort(()=>Math.random()-.5);
+  $("choices").innerHTML=opts.map(e=>`<button class="choice" data-n="${e.n}">${e.s}</button>`).join("");
+  $("choices").querySelectorAll("button").forEach(btn=>btn.addEventListener("click",()=>answer(Number(btn.dataset.n),btn)));
+  $("score").textContent=`점수 ${quizCorrect} / ${quizCount}`;
+}
+function answer(n,btn) {
+  if(quizAnswered) return;
+  quizAnswered=true; quizCount++;
+  const correct=n===quizTarget.n;
+  if(correct) quizCorrect++;
+  $("choices").querySelectorAll("button").forEach(b=>{
+    b.disabled=true;
+    if(Number(b.dataset.n)===quizTarget.n) b.classList.add("correct");
+    else if(b===btn) b.classList.add("wrong");
+  });
+  $("feedback").textContent=correct
+    ? `정답입니다! ${quizTarget.ko}의 기호는 ${quizTarget.s}입니다.`
+    : `아쉽지만 정답은 ${quizTarget.s}(${quizTarget.ko})입니다.`;
+  $("score").textContent=`점수 ${quizCorrect} / ${quizCount}`;
+  $("nextQuestion").classList.remove("hidden");
+  pos=(pos+1)%order.length; flipped=false; renderCard();
+}
+$("flashcard").addEventListener("click",flipCard);
+$("flashcard").addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();flipCard();}});
+$("flipBtn").addEventListener("click",flipCard);
+$("prevBtn").addEventListener("click",()=>move(-1));
+$("nextBtn").addEventListener("click",()=>move(1));
+$("shuffleBtn").addEventListener("click",shuffleOrder);
+$("studyTab").addEventListener("click",()=>setMode(false));
+$("quizTab").addEventListener("click",()=>setMode(true));
+$("nextQuestion").addEventListener("click",newQuestion);
+renderGrid(); renderCard();
+</script>
+</body>
+</html>
